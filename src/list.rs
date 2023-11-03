@@ -35,16 +35,16 @@ where
         .item_size(cx.props.item_size)
         .use_list(cx, cx.props.make_value.clone());
 
-    let top_row = (*list.scroll.read() as f64 / *list.item_size.read()).floor() as usize;
     let values_ref = list.values.read();
     let rows = values_ref.iter().enumerate().map(|(idx, value)| {
+        let top = (list.start() + idx) as f64 * *list.item_size.read();
         render!(
             div {
                 position: "absolute",
-                top: "{(top_row + idx) as f64 * *list.item_size.read()}px",
+                top: "{top}px",
                 left: 0,
                 width: "100%",
-                height: "{list.item_size.read()}px",
+                height: "{list.item_size}px",
                 overflow: "hidden",
                 (cx.props.make_item)( value)
             }
@@ -66,8 +66,7 @@ where
                         .unwrap();
                     list.scroll.set(elem.scroll_top());
                 }
-
-                if let Some(handler)  = &cx.props.onscroll {
+                if let Some(handler) = &cx.props.onscroll {
                     handler.call(())
                 }
             },

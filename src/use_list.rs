@@ -1,7 +1,7 @@
 use dioxus::prelude::{use_effect, Scope};
 use dioxus_signals::{use_signal, Signal};
 use dioxus_use_mounted::{use_mounted, UseMounted};
-use std::{collections::VecDeque, marker::PhantomData};
+use std::{collections::VecDeque, marker::PhantomData, ops::Range};
 
 pub enum Direction {
     Row,
@@ -112,6 +112,7 @@ impl<V> Builder<V> {
             values,
             size: size_signal,
             item_size: item_size_signal,
+            len,
         }
     }
 }
@@ -122,6 +123,7 @@ pub struct UseList<V: 'static> {
     pub values: Signal<VecDeque<V>>,
     pub size: Signal<f64>,
     pub item_size: Signal<f64>,
+    pub len: usize,
 }
 
 impl<V> UseList<V> {
@@ -136,6 +138,19 @@ impl<V> UseList<V> {
             _marker: PhantomData,
         }
     }
+
+    /// Get the current start index.
+    pub fn start(&self) -> usize {
+        (*self.scroll.read() as f64 / *self.item_size.read()).floor() as usize
+    }
+
+    /// Get the current range of item indices.
+    pub fn range(&self) -> Range<usize> {
+        let start = self.start();
+        let total = (*self.size.read() / *self.item_size.read()).floor() as usize + 1;
+        let end = (start + total).min(self.len);
+        start..end
+    }
 }
 
 impl<V> Clone for UseList<V> {
@@ -146,6 +161,7 @@ impl<V> Clone for UseList<V> {
             values: self.values.clone(),
             size: self.size.clone(),
             item_size: self.item_size.clone(),
+            len: self.len,
         }
     }
 }

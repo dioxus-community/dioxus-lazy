@@ -7,7 +7,7 @@ fn app(cx: Scope) -> Element {
         .direction(Direction::Row)
         .size(500.)
         .use_list(cx, |idx| idx);
-    
+
     render!(div {
         onmounted: move |event| list.mounted.onmounted(event)
     })
