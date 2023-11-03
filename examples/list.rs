@@ -3,11 +3,14 @@ use dioxus_lazy::List;
 use log::LevelFilter;
 
 fn app(cx: Scope) -> Element {
-    render!(List {
-        len: 100,
-        item_height: 20.,
-        item: move |idx| render!("Item #{idx}")
-    })
+    render!(
+        List {
+            len: 100,
+            item_height: 20.,
+            item: move |idx: &usize| render!("Item #{*idx}"),
+            make_value: |idx| idx
+        }
+    )
 }
 
 fn main() {
