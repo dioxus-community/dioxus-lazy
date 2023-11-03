@@ -2,16 +2,29 @@ use crate::use_list::UseList;
 use dioxus::prelude::*;
 
 #[derive(Props)]
-pub struct ListProps<F, G> {
-    len: usize,
-    size: f64,
-    item_size: f64,
-    make_item: F,
-    make_value: G,
+pub struct ListProps<'a, F, G> {
+    /// Length of the list.
+    pub len: usize,
+
+    /// Size of the container.
+    pub size: f64,
+
+    /// Size of each item.
+    pub item_size: f64,
+
+    /// Function to create a new item.
+    pub make_item: F,
+
+    /// Function to create a new value.
+    pub make_value: G,
+
+    /// Event handler for scroll events.
+    pub onscroll: Option<EventHandler<'a>>,
 }
 
+/// Virtualized list component.
 #[allow(non_snake_case)]
-pub fn List<'a, T: 'static, F, G>(cx: Scope<'a, ListProps<F, G>>) -> Element<'a>
+pub fn List<'a, T: 'static, F, G>(cx: Scope<'a, ListProps<'a, F, G>>) -> Element<'a>
 where
     F: Fn(&T) -> Element<'a>,
     G: Fn(usize) -> T + Clone + 'static,
@@ -52,6 +65,10 @@ where
                         .downcast_ref()
                         .unwrap();
                     list.scroll.set(elem.scroll_top());
+                }
+
+                if let Some(handler)  = &cx.props.onscroll {
+                    handler.call(())
                 }
             },
             div {
