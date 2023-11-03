@@ -1,8 +1,8 @@
-use dioxus::prelude::{to_owned, use_coroutine, use_effect, Scope};
+use dioxus::prelude::{to_owned, use_coroutine, use_effect, Scope, UnboundedReceiver};
 use dioxus_signals::{use_signal, Signal};
 use dioxus_use_mounted::{use_mounted, UseMounted};
 use futures::StreamExt;
-use std::{collections::VecDeque, future::Future, marker::PhantomData, ops::Range};
+use std::{cmp::Ordering, collections::VecDeque, future::Future, marker::PhantomData, ops::Range};
 
 pub enum Direction {
     Row,
@@ -48,56 +48,52 @@ impl<V> Builder<V> {
         Fut: Future<Output = V>,
         V: 'static,
     {
-        let inner = self.inner.take().unwrap();
-        let size = inner.size;
-        let item_size = inner.item_size;
-        let len = inner.len;
-
         let mounted = use_mounted(cx);
         let scroll = use_signal(cx, || 0);
         let values = use_signal(cx, || VecDeque::new());
 
-        let size_signal = use_signal(cx, || size);
-        use_effect(cx, &size, |_| {
-            size_signal.set(size);
-            async {}
-        });
-
-        let item_size_signal = use_signal(cx, || item_size);
-        use_effect(cx, &item_size, |_| {
-            item_size_signal.set(item_size);
-            async {}
-        });
+        let inner = self.inner.take().unwrap();
+        let len = inner.len;
+        let size = use_effect_signal(cx, inner.size);
+        let item_size = use_effect_signal(cx, inner.item_size);
 
         let mut last_top_row = 0;
         let mut last_bottom_row = 0;
-        let task = use_coroutine(cx, |mut rx| async move {
+        let task = use_coroutine(cx, |mut rx: UnboundedReceiver<(usize, usize)>| async move {
             while let Some((top_row, bottom_row)) = rx.next().await {
-                if top_row < last_top_row {
-                    let mut rows_ref = values.write();
-                    for idx in (top_row..last_top_row).rev() {
-                        let value = make_value(idx).await;
-                        rows_ref.push_front(value);
+                match top_row.cmp(&last_top_row) {
+                    Ordering::Less => {
+                        let mut rows_ref = values.write();
+                        for idx in (top_row..last_top_row).rev() {
+                            let value = make_value(idx).await;
+                            rows_ref.push_front(value);
+                        }
                     }
-                } else if top_row > last_top_row {
-                    let mut rows_ref = values.write();
-                    for _ in 0..top_row - last_top_row {
-                        rows_ref.pop_front();
+                    Ordering::Greater => {
+                        let mut rows_ref = values.write();
+                        for _ in 0..top_row - last_top_row {
+                            rows_ref.pop_front();
+                        }
                     }
+                    Ordering::Equal => {}
                 }
 
                 if top_row != bottom_row {
-                    if bottom_row > last_bottom_row {
-                        let mut rows_ref = values.write();
-                        for idx in last_bottom_row..bottom_row {
-                            let value = make_value(idx).await;
-                            rows_ref.push_back(value);
+                    match bottom_row.cmp(&last_bottom_row) {
+                        Ordering::Greater => {
+                            let mut rows_ref = values.write();
+                            for idx in last_bottom_row..bottom_row {
+                                let value = make_value(idx).await;
+                                rows_ref.push_back(value);
+                            }
                         }
-                    } else if bottom_row < last_bottom_row {
-                        let mut rows_ref = values.write();
-                        for _ in 0..last_bottom_row - bottom_row {
-                            rows_ref.pop_back();
+                        Ordering::Less => {
+                            let mut rows_ref = values.write();
+                            for _ in 0..last_bottom_row - bottom_row {
+                                rows_ref.pop_back();
+                            }
                         }
+                        Ordering::Equal => {}
                     }
                 }
 
@@ -108,9 +104,9 @@ impl<V> Builder<V> {
 
         to_owned![task];
         dioxus_signals::use_effect(cx, move || {
-            let item_height = *item_size_signal();
+            let item_height = *item_size();
             let top_row = (*scroll() as f64 / item_height).floor() as usize;
-            let total_rows = (*size_signal() / item_height).floor() as usize + 1;
+            let total_rows = (*size() / item_height).floor() as usize + 1;
             let bottom_row = (top_row + total_rows).min(len);
             task.send((top_row, bottom_row))
         });
@@ -119,11 +115,23 @@ impl<V> Builder<V> {
             mounted,
             scroll,
             values,
-            size: size_signal,
-            item_size: item_size_signal,
+            size,
+            item_size,
             len,
         }
     }
+}
+
+fn use_effect_signal<T, V>(cx: Scope<T>, value: V) -> Signal<V>
+where
+    V: PartialEq + Clone + 'static,
+{
+    let signal = use_signal(cx, || value.clone());
+    use_effect(cx, &value, |val| {
+        signal.set(val);
+        async {}
+    });
+    signal
 }
 
 pub struct UseList<V: 'static> {
@@ -164,14 +172,7 @@ impl<V> UseList<V> {
 
 impl<V> Clone for UseList<V> {
     fn clone(&self) -> Self {
-        Self {
-            mounted: self.mounted.clone(),
-            scroll: self.scroll.clone(),
-            values: self.values.clone(),
-            size: self.size.clone(),
-            item_size: self.item_size.clone(),
-            len: self.len,
-        }
+        *self
     }
 }
 
