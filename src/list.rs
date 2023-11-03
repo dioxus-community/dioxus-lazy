@@ -40,6 +40,7 @@ where
         let top = (list.start() + idx) as f64 * *list.item_size.read();
         render!(
             div {
+                key: "{top}",
                 position: "absolute",
                 top: "{top}px",
                 left: 0,
