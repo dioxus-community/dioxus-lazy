@@ -5,8 +5,8 @@ use log::LevelFilter;
 fn app(cx: Scope) -> Element {
     render!(List {
         len: 100,
-        height: 400.,
-        item_height: 20.,
+        size: 400.,
+        item_size: 20.,
         make_item: move |idx: &usize| render!("Item {*idx}"),
         make_value: |idx| idx
     })

@@ -15,3 +15,16 @@ fn app(cx: Scope) -> Element {
     })
 }
 ```
+
+```rust
+fn app(cx: Scope) -> Element {
+    let list = UseList::builder()
+        .direction(Direction::Row)
+        .size(500.)
+        .use_list(cx, |idx| idx);
+    
+    render!(div {
+        onmounted: move |event| list.mounted.onmounted(event)
+    })
+}
+```

@@ -4,8 +4,8 @@ use dioxus::prelude::*;
 #[derive(Props)]
 pub struct ListProps<F, G> {
     len: usize,
-    height: f64,
-    item_height: f64,
+    size: f64,
+    item_size: f64,
     make_item: F,
     make_value: G,
 }
@@ -18,30 +18,30 @@ where
 {
     let list = UseList::builder()
         .len(cx.props.len)
-        .height(cx.props.height)
-        .item_height(cx.props.item_height)
+        .size(cx.props.size)
+        .item_size(cx.props.item_size)
         .use_list(cx, cx.props.make_value.clone());
 
-    let top_row = (*list.scroll.read() as f64 / *list.item_height.read()).floor() as usize;
+    let top_row = (*list.scroll.read() as f64 / *list.item_size.read()).floor() as usize;
     let values_ref = list.values.read();
     let rows = values_ref.iter().enumerate().map(|(idx, value)| {
         render!(
             div {
                 position: "absolute",
-                top: "{(top_row + idx) as f64 * *list.item_height.read()}px",
+                top: "{(top_row + idx) as f64 * *list.item_size.read()}px",
                 left: 0,
                 width: "100%",
-                height: "{list.item_height.read()}px",
+                height: "{list.item_size.read()}px",
                 overflow: "hidden",
                 (cx.props.make_item)( value)
             }
         )
     });
 
-    let height = *list.height.read();
+    let size = *list.size.read();
     render!(
         div {
-            height: "{height}px",
+            height: "{size}px",
             overflow: "scroll",
             onmounted: move |event| list.mounted.onmounted(event),
             onscroll: move |_| {
@@ -56,7 +56,7 @@ where
             },
             div {
                 position: "relative",
-                height: "{list.item_height * cx.props.len as f64}px",
+                height: "{list.item_size * cx.props.len as f64}px",
                 overflow: "hidden",
                 rows
             }

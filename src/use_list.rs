@@ -11,8 +11,8 @@ pub enum Direction {
 struct Inner {
     direction: Direction,
     len: usize,
-    height: f64,
-    item_height: f64,
+    size: f64,
+    item_size: f64,
 }
 
 pub struct Builder<V> {
@@ -31,13 +31,13 @@ impl<V> Builder<V> {
         self
     }
 
-    pub fn height(&mut self, height: f64) -> &mut Self {
-        self.inner.as_mut().unwrap().height = height;
+    pub fn size(&mut self, size: f64) -> &mut Self {
+        self.inner.as_mut().unwrap().size = size;
         self
     }
 
-    pub fn item_height(&mut self, item_height: f64) -> &mut Self {
-        self.inner.as_mut().unwrap().item_height = item_height;
+    pub fn item_size(&mut self, item_size: f64) -> &mut Self {
+        self.inner.as_mut().unwrap().item_size = item_size;
         self
     }
 
@@ -47,23 +47,23 @@ impl<V> Builder<V> {
         V: 'static,
     {
         let inner = self.inner.take().unwrap();
-        let height = inner.height;
-        let item_height = inner.item_height;
+        let size = inner.size;
+        let item_size = inner.item_size;
         let len = inner.len;
 
         let mounted = use_mounted(cx);
         let scroll = use_signal(cx, || 0);
         let values = use_signal(cx, || VecDeque::new());
 
-        let height_signal = use_signal(cx, || height);
-        use_effect(cx, &height, |_| {
-            height_signal.set(height);
+        let size_signal = use_signal(cx, || size);
+        use_effect(cx, &size, |_| {
+            size_signal.set(size);
             async {}
         });
 
-        let item_height_signal = use_signal(cx, || item_height);
-        use_effect(cx, &item_height, |_| {
-            item_height_signal.set(item_height);
+        let item_size_signal = use_signal(cx, || item_size);
+        use_effect(cx, &item_size, |_| {
+            item_size_signal.set(item_size);
             async {}
         });
 
@@ -71,9 +71,9 @@ impl<V> Builder<V> {
         let mut last_bottom_row = 0;
         let make_value = make_value;
         dioxus_signals::use_effect(cx, move || {
-            let item_height = *item_height_signal();
+            let item_height = *item_size_signal();
             let top_row = (*scroll() as f64 / item_height).floor() as usize;
-            let total_rows = (*height_signal() / item_height).floor() as usize + 1;
+            let total_rows = (*size_signal() / item_height).floor() as usize + 1;
             let bottom_row = (top_row + total_rows).min(len);
 
             if top_row < last_top_row {
@@ -110,8 +110,8 @@ impl<V> Builder<V> {
             mounted,
             scroll,
             values,
-            height: height_signal,
-            item_height: item_height_signal,
+            size: size_signal,
+            item_size: item_size_signal,
         }
     }
 }
@@ -120,8 +120,8 @@ pub struct UseList<V: 'static> {
     pub mounted: UseMounted,
     pub scroll: Signal<i32>,
     pub values: Signal<VecDeque<V>>,
-    pub height: Signal<f64>,
-    pub item_height: Signal<f64>,
+    pub size: Signal<f64>,
+    pub item_size: Signal<f64>,
 }
 
 impl<V> UseList<V> {
@@ -130,8 +130,8 @@ impl<V> UseList<V> {
             inner: Some(Inner {
                 direction: Direction::Row,
                 len: 0,
-                height: 400.,
-                item_height: 20.,
+                size: 400.,
+                item_size: 20.,
             }),
             _marker: PhantomData,
         }
@@ -144,8 +144,8 @@ impl<V> Clone for UseList<V> {
             mounted: self.mounted.clone(),
             scroll: self.scroll.clone(),
             values: self.values.clone(),
-            height: self.height.clone(),
-            item_height: self.item_height.clone(),
+            size: self.size.clone(),
+            item_size: self.item_size.clone(),
         }
     }
 }
@@ -157,7 +157,7 @@ impl<V> PartialEq for UseList<V> {
         self.mounted == other.mounted
             && self.scroll == other.scroll
             && self.values == other.values
-            && self.height == other.height
-            && self.item_height == other.item_height
+            && self.size == other.size
+            && self.item_size == other.item_size
     }
 }
