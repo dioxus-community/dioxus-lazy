@@ -8,7 +8,7 @@ fn app(cx: Scope) -> Element {
         size: 400.,
         item_size: 20.,
         make_item: move |idx: &usize| render!("Item {*idx}"),
-        make_value: |idx| idx
+        make_value: |idx| async move { idx }
     })
 }
 

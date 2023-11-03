@@ -6,7 +6,7 @@ fn app(cx: Scope) -> Element {
     let list = UseList::builder()
         .direction(Direction::Row)
         .size(500.)
-        .use_list(cx, |idx| idx);
+        .use_list(cx, |idx| async move { idx });
 
     render!(div {
         onmounted: move |event| list.mounted.onmounted(event)

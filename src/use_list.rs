@@ -1,7 +1,8 @@
-use dioxus::prelude::{use_effect, Scope};
+use dioxus::prelude::{to_owned, use_coroutine, use_effect, Scope};
 use dioxus_signals::{use_signal, Signal};
 use dioxus_use_mounted::{use_mounted, UseMounted};
-use std::{collections::VecDeque, marker::PhantomData, ops::Range};
+use futures::StreamExt;
+use std::{collections::VecDeque, future::Future, marker::PhantomData, ops::Range};
 
 pub enum Direction {
     Row,
@@ -41,9 +42,10 @@ impl<V> Builder<V> {
         self
     }
 
-    pub fn use_list<T, F>(&mut self, cx: Scope<T>, make_value: F) -> UseList<V>
+    pub fn use_list<T, F, Fut>(&mut self, cx: Scope<T>, make_value: F) -> UseList<V>
     where
-        F: Fn(usize) -> V + Clone + 'static,
+        F: Fn(usize) -> Fut + Clone + 'static,
+        Fut: Future<Output = V>,
         V: 'static,
     {
         let inner = self.inner.take().unwrap();
@@ -69,41 +71,48 @@ impl<V> Builder<V> {
 
         let mut last_top_row = 0;
         let mut last_bottom_row = 0;
-        let make_value = make_value;
+        let task = use_coroutine(cx, |mut rx| async move {
+            while let Some((top_row, bottom_row)) = rx.next().await {
+                if top_row < last_top_row {
+                    let mut rows_ref = values.write();
+                    for idx in (top_row..last_top_row).rev() {
+                        let value = make_value(idx).await;
+                        rows_ref.push_front(value);
+                    }
+                } else if top_row > last_top_row {
+                    let mut rows_ref = values.write();
+                    for _ in 0..top_row - last_top_row {
+                        rows_ref.pop_front();
+                    }
+                }
+
+                if top_row != bottom_row {
+                    if bottom_row > last_bottom_row {
+                        let mut rows_ref = values.write();
+                        for idx in last_bottom_row..bottom_row {
+                            let value = make_value(idx).await;
+                            rows_ref.push_back(value);
+                        }
+                    } else if bottom_row < last_bottom_row {
+                        let mut rows_ref = values.write();
+                        for _ in 0..last_bottom_row - bottom_row {
+                            rows_ref.pop_back();
+                        }
+                    }
+                }
+
+                last_top_row = top_row;
+                last_bottom_row = bottom_row;
+            }
+        });
+
+        to_owned![task];
         dioxus_signals::use_effect(cx, move || {
             let item_height = *item_size_signal();
             let top_row = (*scroll() as f64 / item_height).floor() as usize;
             let total_rows = (*size_signal() / item_height).floor() as usize + 1;
             let bottom_row = (top_row + total_rows).min(len);
-
-            if top_row < last_top_row {
-                let mut rows_ref = values.write();
-                for idx in (top_row..last_top_row).rev() {
-                    rows_ref.push_front(make_value(idx));
-                }
-            } else if top_row > last_top_row {
-                let mut rows_ref = values.write();
-                for _ in 0..top_row - last_top_row {
-                    rows_ref.pop_front();
-                }
-            }
-
-            if top_row != bottom_row {
-                if bottom_row > last_bottom_row {
-                    let mut rows_ref = values.write();
-                    for idx in last_bottom_row..bottom_row {
-                        rows_ref.push_back(make_value(idx));
-                    }
-                } else if bottom_row < last_bottom_row {
-                    let mut rows_ref = values.write();
-                    for _ in 0..last_bottom_row - bottom_row {
-                        rows_ref.pop_back();
-                    }
-                }
-            }
-
-            last_top_row = top_row;
-            last_bottom_row = bottom_row;
+            task.send((top_row, bottom_row))
         });
 
         UseList {

@@ -1,3 +1,5 @@
+use std::future::Future;
+
 use crate::use_list::UseList;
 use dioxus::prelude::*;
 
@@ -24,10 +26,11 @@ pub struct ListProps<'a, F, G> {
 
 /// Virtualized list component.
 #[allow(non_snake_case)]
-pub fn List<'a, T: 'static, F, G>(cx: Scope<'a, ListProps<'a, F, G>>) -> Element<'a>
+pub fn List<'a, T: 'static, F, G, Fut>(cx: Scope<'a, ListProps<'a, F, G>>) -> Element<'a>
 where
     F: Fn(&T) -> Element<'a>,
-    G: Fn(usize) -> T + Clone + 'static,
+    G: Fn(usize) -> Fut + Clone + 'static,
+    Fut: Future<Output = T>,
 {
     let list = UseList::builder()
         .len(cx.props.len)
@@ -47,7 +50,7 @@ where
                 width: "100%",
                 height: "{list.item_size}px",
                 overflow: "hidden",
-                (cx.props.make_item)( value)
+                (cx.props.make_item)(value)
             }
         )
     });
