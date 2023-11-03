@@ -18,19 +18,29 @@ where
     F: Fn(&T) -> Element<'a>,
     G: Fn(usize) -> T + Clone + 'static,
 {
-    let height = cx.props.height;
-    let item_height = cx.props.item_height;
-    let make_value = cx.props.make_value.clone();
-
     let mounted = use_mounted(cx);
     let scroll = use_signal(cx, || 0);
     let values = use_signal(cx, || VecDeque::new());
 
+    let height = use_signal(cx, || cx.props.height);
+    use_effect(cx, &cx.props.height, |_| {
+        height.set(cx.props.height);
+        async {}
+    });
+
+    let item_height = use_signal(cx, || cx.props.item_height);
+    use_effect(cx, &cx.props.item_height, |_| {
+        item_height.set(cx.props.item_height);
+        async {}
+    });
+
     let mut last_top_row = 0;
     let mut last_bottom_row = 0;
+    let make_value = cx.props.make_value.clone();
     dioxus_signals::use_effect(cx, move || {
+        let item_height = *item_height();
         let top_row = (*scroll() as f64 / item_height).floor() as usize;
-        let total_rows = (height / item_height).floor() as usize + 1;
+        let total_rows = (*height() / item_height).floor() as usize + 1;
         let bottom_row = top_row + total_rows;
 
         if top_row < last_top_row {
@@ -63,16 +73,16 @@ where
         last_bottom_row = bottom_row;
     });
 
-    let top_row = (*scroll() as f64 / item_height).floor() as usize;
+    let top_row = (*scroll() as f64 / *item_height()).floor() as usize;
     let values_ref = values();
     let rows = values_ref.iter().enumerate().map(|(idx, value)| {
         render!(
             div {
                 position: "absolute",
-                top: "{(top_row + idx) as f64 * item_height}px",
+                top: "{(top_row + idx) as f64 * *item_height()}px",
                 left: 0,
                 width: "100%",
-                height: "{cx.props.item_height}px",
+                height: "{item_height}px",
                 overflow: "hidden",
                 (cx.props.make_item)( value)
             }
@@ -81,7 +91,6 @@ where
 
     render!(
         div {
-            width: "500px",
             height: "{height}px",
             overflow: "scroll",
             onmounted: move |event| mounted.onmounted(event),
