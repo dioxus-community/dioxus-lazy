@@ -1,4 +1,4 @@
-use crate::use_list::use_list;
+use crate::use_list::UseList;
 use dioxus::prelude::*;
 
 #[derive(Props)]
@@ -16,13 +16,11 @@ where
     F: Fn(&T) -> Element<'a>,
     G: Fn(usize) -> T + Clone + 'static,
 {
-    let list = use_list(
-        cx,
-        cx.props.len,
-        cx.props.height,
-        cx.props.item_height,
-        cx.props.make_value.clone(),
-    );
+    let list = UseList::builder()
+        .len(cx.props.len)
+        .height(cx.props.height)
+        .item_height(cx.props.item_height)
+        .use_list(cx, cx.props.make_value.clone());
 
     let top_row = (*list.scroll.read() as f64 / *list.item_height.read()).floor() as usize;
     let values_ref = list.values.read();
