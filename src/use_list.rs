@@ -1,14 +1,9 @@
-use crate::Factory;
-use dioxus::prelude::{to_owned, use_coroutine, use_effect, Scope, UnboundedReceiver};
+use crate::{Direction, Factory, UseScrollRange};
+use dioxus::prelude::{to_owned, use_coroutine, Scope, UnboundedReceiver};
 use dioxus_signals::{use_signal, Signal};
 use dioxus_use_mounted::{use_mounted, UseMounted};
 use futures::StreamExt;
-use std::{cmp::Ordering, collections::VecDeque, marker::PhantomData, ops::Range};
-
-pub enum Direction {
-    Row,
-    Column,
-}
+use std::{cmp::Ordering, collections::VecDeque, marker::PhantomData};
 
 struct Inner {
     direction: Direction,
@@ -48,13 +43,7 @@ impl<F> Builder<F> {
         F: Factory + 'static,
     {
         let mounted = use_mounted(cx);
-        let scroll = use_signal(cx, || 0);
         let values = use_signal(cx, || VecDeque::new());
-
-        let inner = self.inner.take().unwrap();
-        let len = inner.len;
-        let size = use_effect_signal(cx, inner.size);
-        let item_size = use_effect_signal(cx, inner.item_size);
 
         let mut last_top_row = 0;
         let mut last_bottom_row = 0;
@@ -102,44 +91,24 @@ impl<F> Builder<F> {
         });
 
         to_owned![task];
-        dioxus_signals::use_effect(cx, move || {
-            let item_height = *item_size();
-            let top_row = (*scroll() as f64 / item_height).floor() as usize;
-            let total_rows = (*size() / item_height).floor() as usize + 1;
-            let bottom_row = (top_row + total_rows).min(len);
-            task.send((top_row, bottom_row))
-        });
+        let inner = self.inner.take().unwrap();
+        let scroll_range = UseScrollRange::builder()
+            .size(inner.size)
+            .item_size(inner.item_size)
+            .len(inner.len)
+            .use_scroll_range(cx, 0, move |range| task.send((range.start, range.end)));
 
         UseList {
             mounted,
-            scroll,
+            scroll_range,
             values,
-            size,
-            item_size,
-            len,
         }
     }
 }
-
-fn use_effect_signal<T, V>(cx: Scope<T>, value: V) -> Signal<V>
-where
-    V: PartialEq + Clone + 'static,
-{
-    let signal = use_signal(cx, || value.clone());
-    use_effect(cx, &value, |val| {
-        signal.set(val);
-        async {}
-    });
-    signal
-}
-
 pub struct UseList<V: 'static> {
     pub mounted: UseMounted,
-    pub scroll: Signal<i32>,
+    pub scroll_range: UseScrollRange,
     pub values: Signal<VecDeque<V>>,
-    pub size: Signal<f64>,
-    pub item_size: Signal<f64>,
-    pub len: usize,
 }
 
 impl<V> UseList<V> {
@@ -155,27 +124,11 @@ impl<V> UseList<V> {
         }
     }
 
-    /// Get the current start index.
-    pub fn start(&self) -> usize {
-        (*self.scroll.read() as f64 / *self.item_size.read()).floor() as usize
-    }
-
-    /// Get the current range of item indices.
-    pub fn range(&self) -> Range<usize> {
-        let start = self.start();
-        let total = (*self.size.read() / *self.item_size.read()).floor() as usize + 1;
-        let end = (start + total).min(self.len);
-        start..end
-    }
-
     pub fn scroll(&self) {
         if let Some(mounted) = &*self.mounted.signal.read() {
-            let elem: &web_sys::Element = mounted
-                .get_raw_element()
-                .unwrap()
-                .downcast_ref()
-                .unwrap();
-            self.scroll.set(elem.scroll_top());
+            let elem: &web_sys::Element =
+                mounted.get_raw_element().unwrap().downcast_ref().unwrap();
+            self.scroll_range.scroll.set(elem.scroll_top());
         }
     }
 }
@@ -191,9 +144,7 @@ impl<V> Copy for UseList<V> {}
 impl<V> PartialEq for UseList<V> {
     fn eq(&self, other: &Self) -> bool {
         self.mounted == other.mounted
-            && self.scroll == other.scroll
+            && self.scroll_range == other.scroll_range
             && self.values == other.values
-            && self.size == other.size
-            && self.item_size == other.item_size
     }
 }

@@ -37,7 +37,7 @@ where
 
     let values_ref = list.values.read();
     let rows = values_ref.iter().enumerate().map(|(idx, value)| {
-        let top = (list.start() + idx) as f64 * *list.item_size.read();
+        let top = (list.scroll_range.start() + idx) as f64 * *list.scroll_range.item_size.read();
         render!(
             div {
                 key: "{top}",
@@ -45,14 +45,14 @@ where
                 top: "{top}px",
                 left: 0,
                 width: "100%",
-                height: "{list.item_size}px",
+                height: "{list.scroll_range.item_size}px",
                 overflow: "hidden",
                 (cx.props.make_item)(value)
             }
         )
     });
 
-    let size = *list.size.read();
+    let size = *list.scroll_range.size.read();
     render!(
         div {
             height: "{size}px",
@@ -66,7 +66,7 @@ where
             },
             div {
                 position: "relative",
-                height: "{list.item_size * cx.props.len as f64}px",
+                height: "{list.scroll_range.item_size * cx.props.len as f64}px",
                 overflow: "hidden",
                 rows
             }
