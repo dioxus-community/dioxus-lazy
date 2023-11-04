@@ -3,7 +3,7 @@ Virtualized components for dioxus
 
 ```rust
 use dioxus::prelude::*;
-use dioxus_lazy::List;
+use dioxus_lazy::{factory, List};
 
 fn app(cx: Scope) -> Element {
     render!(List {
@@ -11,20 +11,20 @@ fn app(cx: Scope) -> Element {
         size: 400.,
         item_size: 20.,
         make_item: move |idx: &usize| render!("Item {*idx}"),
-        make_value: |idx| async move { idx }
+        make_value: factory::from_fn(|idx| async move { idx })
     })
 }
 ```
 
 ```rust
 use dioxus::prelude::*;
-use dioxus_lazy::{Direction, UseList};
+use dioxus_lazy::{factory, Direction, UseList};
 
 fn app(cx: Scope) -> Element {
     let list = UseList::builder()
         .direction(Direction::Row)
         .size(500.)
-        .use_list(cx, |idx| async move { idx });
+        .use_list(cx, factory::from_fn(|idx| async move { idx }));
 
     render!(div {
         onmounted: move |event| list.mounted.onmounted(event)

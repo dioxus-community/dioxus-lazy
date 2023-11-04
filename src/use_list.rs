@@ -2,7 +2,9 @@ use dioxus::prelude::{to_owned, use_coroutine, use_effect, Scope, UnboundedRecei
 use dioxus_signals::{use_signal, Signal};
 use dioxus_use_mounted::{use_mounted, UseMounted};
 use futures::StreamExt;
-use std::{cmp::Ordering, collections::VecDeque, future::Future, marker::PhantomData, ops::Range};
+use std::{cmp::Ordering, collections::VecDeque, marker::PhantomData, ops::Range};
+
+use crate::Factory;
 
 pub enum Direction {
     Row,
@@ -16,12 +18,12 @@ struct Inner {
     item_size: f64,
 }
 
-pub struct Builder<V> {
+pub struct Builder<F> {
     inner: Option<Inner>,
-    _marker: PhantomData<V>,
+    _marker: PhantomData<F>,
 }
 
-impl<V> Builder<V> {
+impl<F> Builder<F> {
     pub fn direction(&mut self, direction: Direction) -> &mut Self {
         self.inner.as_mut().unwrap().direction = direction;
         self
@@ -42,11 +44,9 @@ impl<V> Builder<V> {
         self
     }
 
-    pub fn use_list<T, F, Fut>(&mut self, cx: Scope<T>, make_value: F) -> UseList<V>
+    pub fn use_list<T>(&mut self, cx: Scope<T>, make_value: F) -> UseList<F::Item>
     where
-        F: Fn(usize) -> Fut + Clone + 'static,
-        Fut: Future<Output = V>,
-        V: 'static,
+        F: Factory + 'static,
     {
         let mounted = use_mounted(cx);
         let scroll = use_signal(cx, || 0);
@@ -64,8 +64,8 @@ impl<V> Builder<V> {
                 match top_row.cmp(&last_top_row) {
                     Ordering::Less => {
                         let mut rows_ref = values.write();
-                        for idx in (top_row..last_top_row).rev() {
-                            let value = make_value(idx).await;
+                        let values = make_value.make(top_row..last_top_row, true).await;
+                        for value in values.into_iter() {
                             rows_ref.push_front(value);
                         }
                     }
@@ -82,9 +82,9 @@ impl<V> Builder<V> {
                     match bottom_row.cmp(&last_bottom_row) {
                         Ordering::Greater => {
                             let mut rows_ref = values.write();
-                            for idx in last_bottom_row..bottom_row {
-                                let value = make_value(idx).await;
-                                rows_ref.push_back(value);
+                            let values = make_value.make(last_bottom_row..bottom_row, false).await;
+                            for value in values.into_iter() {
+                                rows_ref.push_front(value);
                             }
                         }
                         Ordering::Less => {

@@ -1,3 +1,6 @@
+pub mod factory;
+pub use factory::Factory;
+
 mod list;
 pub use list::{List, ListProps};
 

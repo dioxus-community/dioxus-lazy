@@ -1,5 +1,5 @@
 use dioxus::prelude::*;
-use dioxus_lazy::List;
+use dioxus_lazy::{factory, List};
 use log::LevelFilter;
 
 fn app(cx: Scope) -> Element {
@@ -8,7 +8,7 @@ fn app(cx: Scope) -> Element {
         size: 400.,
         item_size: 20.,
         make_item: move |idx: &usize| render!("Item {*idx}"),
-        make_value: |idx| async move { idx }
+        make_value: factory::from_fn(|idx| async move { idx })
     })
 }
 
