@@ -1,10 +1,9 @@
+use crate::Factory;
 use dioxus::prelude::{to_owned, use_coroutine, use_effect, Scope, UnboundedReceiver};
 use dioxus_signals::{use_signal, Signal};
 use dioxus_use_mounted::{use_mounted, UseMounted};
 use futures::StreamExt;
 use std::{cmp::Ordering, collections::VecDeque, marker::PhantomData, ops::Range};
-
-use crate::Factory;
 
 pub enum Direction {
     Row,
@@ -84,7 +83,7 @@ impl<F> Builder<F> {
                             let mut rows_ref = values.write();
                             let values = make_value.make(last_bottom_row..bottom_row, false).await;
                             for value in values.into_iter() {
-                                rows_ref.push_front(value);
+                                rows_ref.push_back(value);
                             }
                         }
                         Ordering::Less => {
