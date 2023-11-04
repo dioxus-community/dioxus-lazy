@@ -35,7 +35,7 @@ where
         .item_size(cx.props.item_size)
         .use_list(cx, cx.props.make_value.clone());
 
-    let values_ref = list.values.read();
+    let values_ref = list.lazy.values.read();
     let rows = values_ref.iter().enumerate().map(|(idx, value)| {
         let top = (list.scroll_range.start() + idx) as f64 * *list.scroll_range.item_size.read();
         render!(
@@ -53,6 +53,7 @@ where
     });
 
     let size = *list.scroll_range.size.read();
+    let inner_size = list.scroll_range.item_size * cx.props.len as f64;
     render!(
         div {
             height: "{size}px",
@@ -64,12 +65,7 @@ where
                     handler.call(())
                 }
             },
-            div {
-                position: "relative",
-                height: "{list.scroll_range.item_size * cx.props.len as f64}px",
-                overflow: "hidden",
-                rows
-            }
+            div { position: "relative", height: "{inner_size}px", overflow: "hidden", rows }
         }
     )
 }
