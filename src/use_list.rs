@@ -167,6 +167,17 @@ impl<V> UseList<V> {
         let end = (start + total).min(self.len);
         start..end
     }
+
+    pub fn scroll(&self) {
+        if let Some(mounted) = &*self.mounted.signal.read() {
+            let elem: &web_sys::Element = mounted
+                .get_raw_element()
+                .unwrap()
+                .downcast_ref()
+                .unwrap();
+            self.scroll.set(elem.scroll_top());
+        }
+    }
 }
 
 impl<V> Clone for UseList<V> {

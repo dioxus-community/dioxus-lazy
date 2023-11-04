@@ -59,14 +59,7 @@ where
             overflow: "scroll",
             onmounted: move |event| list.mounted.onmounted(event),
             onscroll: move |_| {
-                if let Some(mounted) = &*list.mounted.signal.read() {
-                    let elem: &web_sys::Element = mounted
-                        .get_raw_element()
-                        .unwrap()
-                        .downcast_ref()
-                        .unwrap();
-                    list.scroll.set(elem.scroll_top());
-                }
+                list.scroll();
                 if let Some(handler) = &cx.props.onscroll {
                     handler.call(())
                 }
