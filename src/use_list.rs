@@ -1,9 +1,7 @@
 use crate::{use_lazy, Direction, Factory, UseLazy, UseScrollRange};
-use dioxus::prelude::{to_owned, use_coroutine, Scope, UnboundedReceiver};
-use dioxus_signals::{use_signal, Signal};
+use dioxus::prelude::{to_owned, Scope};
 use dioxus_use_mounted::{use_mounted, UseMounted};
-use futures::StreamExt;
-use std::{cmp::Ordering, collections::VecDeque, marker::PhantomData};
+use std::marker::PhantomData;
 
 struct Inner {
     direction: Direction,
