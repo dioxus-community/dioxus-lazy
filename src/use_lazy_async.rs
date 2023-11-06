@@ -1,6 +1,6 @@
 use crate::{lazy::Values, Factory};
 use dioxus::prelude::{to_owned, use_coroutine, Coroutine, Scope};
-use dioxus_signals::{use_signal, Signal};
+use dioxus_signals::{use_signal, CopyValue, Signal};
 use futures::StreamExt;
 use std::{cmp::Ordering, collections::VecDeque, ops::Range};
 
@@ -9,7 +9,7 @@ enum Message {
     Refresh,
 }
 
-pub fn use_lazy_async<'a, T, F>(cx: Scope<'a, T>, make_value: F) -> &'a UseLazyAsync<F::Item>
+pub fn use_lazy_async<T, F>(cx: Scope<T>, make_value: F) -> UseLazyAsync<F::Item>
 where
     F: Factory + 'static,
 {
@@ -71,13 +71,15 @@ where
         }
     });
 
-    to_owned![task];
-    cx.bump().alloc(UseLazyAsync { task, values })
+    UseLazyAsync {
+        task: CopyValue::new(task.clone()),
+        values,
+    }
 }
 
 pub struct UseLazyAsync<V: 'static> {
     pub values: Signal<VecDeque<V>>,
-    task: Coroutine<Message>,
+    task: CopyValue<Coroutine<Message>>,
 }
 
 impl<V> Values for UseLazyAsync<V> {
@@ -88,11 +90,11 @@ impl<V> Values for UseLazyAsync<V> {
     }
 
     fn set(&self, range: Range<usize>) {
-        self.task.send(Message::Range(range))
+        self.task.read().send(Message::Range(range))
     }
 
     fn refresh(&self) {
-        self.task.send(Message::Refresh)
+        self.task.read().send(Message::Refresh)
     }
 }
 
@@ -104,6 +106,8 @@ impl<V> Clone for UseLazyAsync<V> {
         }
     }
 }
+
+impl<V> Copy for UseLazyAsync<V> {}
 
 impl<V> PartialEq for UseLazyAsync<V> {
     fn eq(&self, other: &Self) -> bool {

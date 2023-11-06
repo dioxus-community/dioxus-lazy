@@ -39,7 +39,7 @@ impl<F> Builder<F> {
         self
     }
 
-    pub fn use_list<'a, T>(&mut self, cx: Scope<'a, T>, make_value: F) -> &'a UseList<F::Values>
+    pub fn use_list<T>(&mut self, cx: Scope<T>, make_value: F) -> UseList<F::Values>
     where
         F: Lazy,
     {
@@ -54,22 +54,22 @@ impl<F> Builder<F> {
             .len(inner.len)
             .use_scroll_range(cx, move |range| lazy_clone.set(range));
 
-        cx.bump().alloc(UseList {
+        UseList {
             mounted,
             scroll_range,
             lazy,
-        })
+        }
     }
 }
 
-pub struct UseList<V: 'static> {
+pub struct UseList<T: 'static> {
     pub mounted: UseMounted,
     pub scroll_range: UseScrollRange,
-    pub lazy: V,
+    pub lazy: T,
 }
 
-impl<V> UseList<V> {
-    pub fn builder() -> Builder<V> {
+impl<T> UseList<T> {
+    pub fn builder() -> Builder<T> {
         Builder {
             inner: Some(Inner {
                 direction: Direction::Row,
@@ -90,7 +90,7 @@ impl<V> UseList<V> {
     }
 }
 
-impl<V: Clone> Clone for UseList<V> {
+impl<T: Clone> Clone for UseList<T> {
     fn clone(&self) -> Self {
         Self {
             mounted: self.mounted.clone(),
@@ -100,7 +100,9 @@ impl<V: Clone> Clone for UseList<V> {
     }
 }
 
-impl<V: PartialEq> PartialEq for UseList<V> {
+impl<T: Copy> Copy for UseList<T> {}
+
+impl<T: PartialEq> PartialEq for UseList<T> {
     fn eq(&self, other: &Self) -> bool {
         self.mounted == other.mounted
             && self.scroll_range == other.scroll_range
