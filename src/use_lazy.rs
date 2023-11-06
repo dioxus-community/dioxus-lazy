@@ -1,3 +1,4 @@
+use crate::lazy::Values;
 use dioxus::prelude::Scope;
 use dioxus_signals::{use_signal, CopyValue, Signal};
 use std::{cmp::Ordering, collections::VecDeque, ops::Range};
@@ -8,28 +9,34 @@ where
     I: IntoIterator<Item = V>,
 {
     let values = use_signal(cx, || VecDeque::new());
-    let last = use_signal(cx, || 0..0);
+    let range = use_signal(cx, || 0..0);
 
     UseLazy {
         make_value: CopyValue::new(make_value),
         values,
-        last,
+        range,
     }
 }
 
 pub struct UseLazy<F: 'static, V: 'static> {
     pub values: Signal<VecDeque<V>>,
     make_value: CopyValue<F>,
-    last: Signal<Range<usize>>,
+    range: Signal<Range<usize>>,
 }
 
-impl<F, V, I> UseLazy<F, V>
+impl<F, V, I> Values for UseLazy<F, V>
 where
     F: FnMut(Range<usize>, bool) -> I + 'static,
     I: IntoIterator<Item = V>,
 {
-    pub fn set(&self, range: Range<usize>) {
-        let mut last = self.last.write();
+    type Value = V;
+
+    fn values(&self) -> Signal<VecDeque<Self::Value>> {
+        self.values
+    }
+
+    fn set(&self, range: Range<usize>) {
+        let mut last = self.range.write();
         let values = self.values;
 
         match range.start.cmp(&last.start) {
@@ -53,7 +60,7 @@ where
             match range.end.cmp(&last.end) {
                 Ordering::Greater => {
                     let mut rows_ref = values.write();
-                    let values = (self.make_value).write()(range.start..last.start, false);
+                    let values = (self.make_value).write()(last.end..range.end, false);
                     for value in values.into_iter() {
                         rows_ref.push_back(value);
                     }
@@ -71,8 +78,8 @@ where
         *last = range;
     }
 
-    pub fn refresh(&self) {
-        let last = self.last.read();
+    fn refresh(&self) {
+        let last = self.range.read();
         let mut values_ref = self.values.write();
         values_ref.clear();
 

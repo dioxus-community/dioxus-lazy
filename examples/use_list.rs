@@ -1,12 +1,12 @@
 use dioxus::prelude::*;
-use dioxus_lazy::{factory, Direction, UseList};
+use dioxus_lazy::{lazy, Direction, UseList};
 use log::LevelFilter;
 
 fn app(cx: Scope) -> Element {
     let list = UseList::builder()
         .direction(Direction::Row)
         .size(500.)
-        .use_list(cx, factory::from_fn(|idx| async move { idx }));
+        .use_list(cx, lazy::from_async_fn(|idx| async move { idx }));
 
     render!(div {
         onmounted: move |event| list.mounted.onmounted(event)

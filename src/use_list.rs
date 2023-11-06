@@ -1,5 +1,8 @@
-use crate::{use_lazy_async, Direction, Factory, UseLazyAsync, UseScrollRange};
-use dioxus::prelude::{to_owned, Scope};
+use crate::{
+    lazy::{Lazy, Values},
+    Direction, UseScrollRange,
+};
+use dioxus::prelude::Scope;
 use dioxus_use_mounted::{use_mounted, UseMounted};
 use std::marker::PhantomData;
 
@@ -36,13 +39,12 @@ impl<F> Builder<F> {
         self
     }
 
-    pub fn use_list<'a, T>(&mut self, cx: Scope<'a, T>, make_value: F) -> &'a UseList<F::Item>
+    pub fn use_list<'a, T>(&mut self, cx: Scope<'a, T>, make_value: F) -> &'a UseList<F::Values>
     where
-        F: Factory + 'static,
+        F: Lazy,
     {
         let mounted = use_mounted(cx);
-        let lazy = use_lazy_async(cx, make_value);
-        to_owned![lazy];
+        let lazy = make_value.values(cx);
 
         let inner = self.inner.take().unwrap();
         let lazy_clone = lazy.clone();
@@ -59,10 +61,11 @@ impl<F> Builder<F> {
         })
     }
 }
+
 pub struct UseList<V: 'static> {
     pub mounted: UseMounted,
     pub scroll_range: UseScrollRange,
-    pub lazy: UseLazyAsync<V>,
+    pub lazy: V,
 }
 
 impl<V> UseList<V> {
@@ -87,7 +90,7 @@ impl<V> UseList<V> {
     }
 }
 
-impl<V> Clone for UseList<V> {
+impl<V: Clone> Clone for UseList<V> {
     fn clone(&self) -> Self {
         Self {
             mounted: self.mounted.clone(),
@@ -97,7 +100,7 @@ impl<V> Clone for UseList<V> {
     }
 }
 
-impl<V> PartialEq for UseList<V> {
+impl<V: PartialEq> PartialEq for UseList<V> {
     fn eq(&self, other: &Self) -> bool {
         self.mounted == other.mounted
             && self.scroll_range == other.scroll_range

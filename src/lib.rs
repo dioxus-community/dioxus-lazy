@@ -1,6 +1,8 @@
 pub mod factory;
 pub use factory::Factory;
 
+pub mod lazy;
+
 mod list;
 pub use list::{List, ListProps};
 
