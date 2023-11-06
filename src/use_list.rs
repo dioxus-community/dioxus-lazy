@@ -1,4 +1,4 @@
-use crate::{use_lazy, Direction, Factory, UseLazy, UseScrollRange};
+use crate::{use_lazy_async, Direction, Factory, UseLazyAsync, UseScrollRange};
 use dioxus::prelude::{to_owned, Scope};
 use dioxus_use_mounted::{use_mounted, UseMounted};
 use std::marker::PhantomData;
@@ -41,7 +41,7 @@ impl<F> Builder<F> {
         F: Factory + 'static,
     {
         let mounted = use_mounted(cx);
-        let lazy = use_lazy(cx, make_value);
+        let lazy = use_lazy_async(cx, make_value);
         to_owned![lazy];
 
         let inner = self.inner.take().unwrap();
@@ -62,7 +62,7 @@ impl<F> Builder<F> {
 pub struct UseList<V: 'static> {
     pub mounted: UseMounted,
     pub scroll_range: UseScrollRange,
-    pub lazy: UseLazy<V>,
+    pub lazy: UseLazyAsync<V>,
 }
 
 impl<V> UseList<V> {

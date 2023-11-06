@@ -7,6 +7,9 @@ pub use list::{List, ListProps};
 mod use_lazy;
 pub use use_lazy::{use_lazy, UseLazy};
 
+mod use_lazy_async;
+pub use use_lazy_async::{use_lazy_async, UseLazyAsync};
+
 pub mod use_list;
 pub use use_list::UseList;
 
