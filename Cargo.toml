@@ -12,7 +12,5 @@ dioxus-use-mounted = { git = "https://github.com/matthunz/dioxus-use-mounted" }
 log = "0.4.20"
 dioxus-logger = "0.4.1"
 console_error_panic_hook = "0.1.7"
-wasm-bindgen = "0.2.87"
-web-sys = { version = "0.3.56", features = ["CanvasRenderingContext2d", "HtmlCanvasElement", "HtmlElement", "TextMetrics"] }
-js-sys = "0.3.65"
+web-sys = { version = "0.3.56", features = ["HtmlElement"] }
 futures = "0.3.29"

@@ -305,9 +305,7 @@ dependencies = [
  "dioxus-use-mounted",
  "dioxus-web",
  "futures",
- "js-sys",
  "log",
- "wasm-bindgen",
  "web-sys",
 ]
 
