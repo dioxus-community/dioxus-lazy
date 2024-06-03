@@ -1,15 +1,14 @@
 use crate::lazy::Values;
-use dioxus::prelude::Scope;
-use dioxus_signals::{use_signal, CopyValue, Signal};
+use dioxus::prelude::*;
 use std::{cmp::Ordering, collections::VecDeque, ops::Range};
 
-pub fn use_lazy<'a, T, F, V, I>(cx: Scope<'a, T>, make_value: F) -> UseLazy<F, V>
+pub fn use_lazy<F, V, I>(make_value: F) -> UseLazy<F, V>
 where
     F: FnMut(Range<usize>, bool) -> I + 'static,
     I: IntoIterator<Item = V>,
 {
-    let values = use_signal(cx, || VecDeque::new());
-    let range = use_signal(cx, || 0..0);
+    let values = use_signal(|| VecDeque::new());
+    let range = use_signal(|| 0..0);
 
     UseLazy {
         make_value: CopyValue::new(make_value),
@@ -35,9 +34,9 @@ where
         self.values
     }
 
-    fn set(&self, range: Range<usize>) {
+    fn set(&mut self, range: Range<usize>) {
         let mut last = self.range.write();
-        let values = self.values;
+        let mut values = self.values;
 
         match range.start.cmp(&last.start) {
             Ordering::Less => {
@@ -78,7 +77,7 @@ where
         *last = range;
     }
 
-    fn refresh(&self) {
+    fn refresh(&mut self) {
         let last = self.range.read();
         let mut values_ref = self.values.write();
         values_ref.clear();
