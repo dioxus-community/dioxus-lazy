@@ -4,7 +4,7 @@ use crate::{
 };
 use dioxus::prelude::*;
 use dioxus_use_mounted::{use_mounted, UseMounted};
-use std::{marker::PhantomData};
+use std::marker::PhantomData;
 
 struct Inner {
     direction: Direction,
