@@ -1,6 +1,5 @@
 use crate::Direction;
-use dioxus::prelude::{use_effect, Scope};
-use dioxus_signals::{use_signal, Signal};
+use dioxus::prelude::*;
 use std::ops::Range;
 
 struct Inner {
@@ -35,21 +34,20 @@ impl Builder {
         self
     }
 
-    pub fn use_scroll_range<T>(
+    pub fn use_scroll_range(
         &mut self,
-        cx: Scope<T>,
         mut onscroll: impl FnMut(Range<usize>) + 'static,
     ) -> UseScrollRange {
         let inner = self.inner.take().unwrap();
         let len = inner.len;
-        let size = use_effect_signal(cx, inner.size);
-        let item_size = use_effect_signal(cx, inner.item_size);
-        let scroll = use_signal(cx, || 0);
+        let size = use_effect_signal(inner.size);
+        let item_size = use_effect_signal(inner.item_size);
+        let scroll = use_signal(|| 0);
 
-        dioxus_signals::use_effect(cx, move || {
-            let item_height = *item_size();
-            let top_row = (*scroll() as f64 / item_height).floor() as usize;
-            let total_rows = (*size() / item_height).floor() as usize + 1;
+        use_effect(move || {
+            let item_height = item_size();
+            let top_row = (scroll() as f64 / item_height).floor() as usize;
+            let total_rows = (size() / item_height).floor() as usize + 1;
             let bottom_row = (top_row + total_rows).min(len);
             onscroll(top_row..bottom_row)
         });
@@ -63,15 +61,14 @@ impl Builder {
     }
 }
 
-fn use_effect_signal<T, V>(cx: Scope<T>, value: V) -> Signal<V>
+fn use_effect_signal<V>(value: V) -> Signal<V>
 where
     V: PartialEq + Clone + 'static,
 {
-    let signal = use_signal(cx, || value.clone());
-    use_effect(cx, &value, |val| {
+    let mut signal = use_signal(|| value.clone());
+    use_effect(use_reactive(&value, move |val| {
         signal.set(val);
-        async {}
-    });
+    }));
     signal
 }
 

@@ -1,6 +1,5 @@
 use crate::{factory, use_lazy, use_lazy_async, UseLazy, UseLazyAsync};
-use dioxus::prelude::Scope;
-use dioxus_signals::Signal;
+use dioxus::prelude::*;
 use futures::Future;
 use std::{collections::VecDeque, ops::Range};
 
@@ -9,16 +8,16 @@ pub trait Values: Clone {
 
     fn values(&self) -> Signal<VecDeque<Self::Value>>;
 
-    fn set(&self, range: Range<usize>);
+    fn set(&mut self, range: Range<usize>);
 
-    fn refresh(&self);
+    fn refresh(&mut self);
 }
 
 pub trait Lazy {
     type Value;
     type Values: Values<Value = Self::Value>;
 
-    fn values<T>(self, cx: Scope<T>) -> Self::Values;
+    fn values(self) -> Self::Values;
 }
 
 pub fn from_fn<F, V>(f: F) -> FromFn<F>
@@ -42,24 +41,21 @@ where
     type Value = V;
     type Values = UseLazy<Box<dyn FnMut(Range<usize>, bool) -> std::vec::IntoIter<V>>, V>;
 
-    fn values<T>(mut self, cx: Scope<T>) -> Self::Values {
-        use_lazy(
-            cx,
-            Box::new(move |range, is_rev| {
-                let mut values = Vec::new();
-                if is_rev {
-                    for idx in range.rev() {
-                        values.push((self.f)(idx))
-                    }
-                } else {
-                    for idx in range {
-                        values.push((self.f)(idx))
-                    }
+    fn values(mut self) -> Self::Values {
+        use_lazy(Box::new(move |range, is_rev| {
+            let mut values = Vec::new();
+            if is_rev {
+                for idx in range.rev() {
+                    values.push((self.f)(idx))
                 }
+            } else {
+                for idx in range {
+                    values.push((self.f)(idx))
+                }
+            }
 
-                values.into_iter()
-            }),
-        )
+            values.into_iter()
+        }))
     }
 }
 
@@ -76,8 +72,8 @@ where
     type Value = V;
     type Values = UseLazy<F, V>;
 
-    fn values<T>(self, cx: Scope<T>) -> Self::Values {
-        use_lazy(cx, self.f)
+    fn values(self) -> Self::Values {
+        use_lazy(self.f)
     }
 }
 
@@ -104,8 +100,8 @@ where
     type Value = V;
     type Values = UseLazyAsync<V>;
 
-    fn values<T>(self, cx: Scope<T>) -> Self::Values {
-        use_lazy_async(cx, factory::from_fn(self.f)).clone()
+    fn values(self) -> Self::Values {
+        use_lazy_async(factory::from_fn(self.f))
     }
 }
 
@@ -134,7 +130,7 @@ where
     type Value = V;
     type Values = UseLazyAsync<V>;
 
-    fn values<T>(self, cx: Scope<T>) -> Self::Values {
-        use_lazy_async(cx, factory::from_range_fn(self.f)).clone()
+    fn values(self) -> Self::Values {
+        use_lazy_async(factory::from_range_fn(self.f))
     }
 }

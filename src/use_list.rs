@@ -2,9 +2,9 @@ use crate::{
     lazy::{Lazy, Values},
     Direction, UseScrollRange,
 };
-use dioxus::prelude::Scope;
+use dioxus::prelude::*;
 use dioxus_use_mounted::{use_mounted, UseMounted};
-use std::marker::PhantomData;
+use std::{marker::PhantomData};
 
 struct Inner {
     direction: Direction,
@@ -39,20 +39,20 @@ impl<F> Builder<F> {
         self
     }
 
-    pub fn use_list<T>(&mut self, cx: Scope<T>, make_value: F) -> UseList<F::Values>
+    pub fn use_list(&mut self, make_value: F) -> UseList<F::Values>
     where
         F: Lazy,
     {
-        let mounted = use_mounted(cx);
-        let lazy = make_value.values(cx);
+        let mounted = use_mounted();
+        let lazy = make_value.values();
 
         let inner = self.inner.take().unwrap();
-        let lazy_clone = lazy.clone();
+        let mut lazy_clone = lazy.clone();
         let scroll_range = UseScrollRange::builder()
             .size(inner.size)
             .item_size(inner.item_size)
             .len(inner.len)
-            .use_scroll_range(cx, move |range| lazy_clone.set(range));
+            .use_scroll_range(move |range| lazy_clone.set(range));
 
         UseList {
             mounted,
@@ -81,10 +81,9 @@ impl<T> UseList<T> {
         }
     }
 
-    pub fn scroll(&self) {
-        if let Some(mounted) = &*self.mounted.signal.read() {
-            let elem: &web_sys::Element =
-                mounted.get_raw_element().unwrap().downcast_ref().unwrap();
+    pub fn scroll(&mut self) {
+        if let Some(mounted) = self.mounted.signal.read().as_deref() {
+            let elem: &web_sys::Element = mounted.downcast().unwrap();
             self.scroll_range.scroll.set(elem.scroll_top());
         }
     }
@@ -93,8 +92,8 @@ impl<T> UseList<T> {
 impl<T: Clone> Clone for UseList<T> {
     fn clone(&self) -> Self {
         Self {
-            mounted: self.mounted.clone(),
-            scroll_range: self.scroll_range.clone(),
+            mounted: self.mounted,
+            scroll_range: self.scroll_range,
             lazy: self.lazy.clone(),
         }
     }

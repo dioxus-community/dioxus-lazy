@@ -4,13 +4,14 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-dioxus = { git = "https://github.com/dioxuslabs/dioxus" }
-dioxus-web = { git = "https://github.com/dioxuslabs/dioxus" }
-dioxus-signals = { git = "https://github.com/dioxuslabs/dioxus" }
+dioxus = { version = "0.5" }
 dioxus-resize-observer = { git = "https://github.com/dioxus-community/dioxus-resize-observer" }
-dioxus-use-mounted = { git = "https://github.com/matthunz/dioxus-use-mounted" }
+dioxus-use-mounted = { version = "0.2" }
 log = "0.4.20"
-dioxus-logger = "0.4.1"
+dioxus-logger = "0.5.0"
 console_error_panic_hook = "0.1.7"
 web-sys = { version = "0.3.56", features = ["HtmlElement"] }
 futures = "0.3.29"
+
+[dev-dependencies]
+dioxus = { version = "0.5", features = ["web"] }

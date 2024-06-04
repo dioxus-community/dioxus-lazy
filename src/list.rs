@@ -4,8 +4,8 @@ use crate::{
 };
 use dioxus::prelude::*;
 
-#[derive(Props)]
-pub struct ListProps<'a, F, G> {
+#[derive(Props, Clone)]
+pub struct ListProps<F: 'static, G: 'static> {
     /// Length of the list.
     pub len: usize,
 
@@ -22,27 +22,37 @@ pub struct ListProps<'a, F, G> {
     pub make_value: G,
 
     /// Event handler for scroll events.
-    pub onscroll: Option<EventHandler<'a>>,
+    pub onscroll: Option<EventHandler>,
+}
+
+impl<F: 'static, G: 'static> PartialEq for ListProps<F, G> {
+    fn eq(&self, other: &Self) -> bool {
+        self.len == other.len
+            && self.size == other.size
+            && self.item_size == other.item_size
+            && self.onscroll == other.onscroll
+    }
 }
 
 /// Virtualized list component.
 #[allow(non_snake_case)]
-pub fn List<'a, T: 'static, F, G>(cx: Scope<'a, ListProps<'a, F, G>>) -> Element<'a>
+pub fn List<T, F, G>(props: ListProps<F, G>) -> Element
 where
-    F: Fn(&T) -> Element<'a>,
-    G: Lazy<Value = T> + Clone + 'static,
+    T: 'static,
+    F: Clone + 'static + Fn(&T) -> Element,
+    G: Clone + Lazy<Value = T> + Clone + 'static,
 {
-    let list = UseList::builder()
-        .len(cx.props.len)
-        .size(cx.props.size)
-        .item_size(cx.props.item_size)
-        .use_list(cx, cx.props.make_value.clone());
+    let mut list = UseList::builder()
+        .len(props.len)
+        .size(props.size)
+        .item_size(props.item_size)
+        .use_list(props.make_value.clone());
 
     let values_signal = list.lazy.values();
     let values_ref = values_signal.read();
     let rows = values_ref.iter().enumerate().map(|(idx, value)| {
         let top = (list.scroll_range.start() + idx) as f64 * *list.scroll_range.item_size.read();
-        render!(
+        rsx!(
             div {
                 key: "{top}",
                 position: "absolute",
@@ -51,25 +61,30 @@ where
                 width: "100%",
                 height: "{list.scroll_range.item_size}px",
                 overflow: "hidden",
-                (cx.props.make_item)(value)
+                {(props.make_item)(value)}
             }
         )
     });
 
     let size = *list.scroll_range.size.read();
-    let inner_size = list.scroll_range.item_size * cx.props.len as f64;
-    render!(
+    let inner_size = list.scroll_range.item_size * props.len as f64;
+    rsx!(
         div {
             height: "{size}px",
             overflow: "scroll",
             onmounted: move |event| list.mounted.onmounted(event),
             onscroll: move |_| {
                 list.scroll();
-                if let Some(handler) = &cx.props.onscroll {
+                if let Some(handler) = &props.onscroll {
                     handler.call(())
                 }
             },
-            div { position: "relative", height: "{inner_size}px", overflow: "hidden", rows }
+            div {
+                position: "relative",
+                height: "{inner_size}px",
+                overflow: "hidden",
+                {rows}
+            }
         }
     )
 }

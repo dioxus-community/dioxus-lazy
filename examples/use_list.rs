@@ -1,21 +1,21 @@
 use dioxus::prelude::*;
 use dioxus_lazy::{lazy, Direction, UseList};
-use log::LevelFilter;
+use dioxus_logger::tracing::Level;
 
-fn app(cx: Scope) -> Element {
+fn app() -> Element {
     let list = UseList::builder()
         .direction(Direction::Row)
         .size(500.)
-        .use_list(cx, lazy::from_async_fn(|idx| async move { idx }));
+        .use_list(lazy::from_async_fn(|idx| async move { idx }));
 
-    render!(div {
+    rsx!(div {
         onmounted: move |event| list.mounted.onmounted(event)
     })
 }
 
 fn main() {
-    dioxus_logger::init(LevelFilter::Info).unwrap();
+    dioxus_logger::init(Level::INFO).unwrap();
     console_error_panic_hook::set_once();
 
-    dioxus_web::launch(app);
+    dioxus::launch(app);
 }
