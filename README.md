@@ -1,4 +1,11 @@
 # Dioxus-lazy
+
+[![License](https://img.shields.io/badge/license-MIT%2FApache-blue.svg)](https://github.com/matthunz/dioxus-lazy#license)
+[![Crates.io](https://img.shields.io/crates/v/dioxus-lazy.svg)](https://crates.io/crates/dioxus-lazy)
+[![Docs](https://docs.rs/dioxus-lazy/badge.svg)](https://docs.rs/cdk-builder/latest/dioxus-lazy)
+[![CI](https://github.com/matthunz/dioxus-lazy/workflows/Rust/badge.svg)](https://github.com/matthunz/dioxus-lazy/actions)
+
+
 Virtualized components for dioxus
 
 ```rust
