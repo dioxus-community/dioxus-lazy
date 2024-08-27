@@ -5,7 +5,11 @@ use crate::{
 use dioxus::prelude::*;
 
 #[derive(Props, Clone)]
-pub struct ListProps<F: 'static, G: 'static> {
+pub struct ListProps<F: 'static, G: 'static>
+where
+    F: Clone,
+    G: Clone,
+{
     /// Length of the list.
     pub len: usize,
 
@@ -25,7 +29,11 @@ pub struct ListProps<F: 'static, G: 'static> {
     pub onscroll: Option<EventHandler>,
 }
 
-impl<F: 'static, G: 'static> PartialEq for ListProps<F, G> {
+impl<F: 'static, G: 'static> PartialEq for ListProps<F, G>
+where
+    F: Clone,
+    G: Clone,
+{
     fn eq(&self, other: &Self) -> bool {
         self.len == other.len
             && self.size == other.size
@@ -50,7 +58,7 @@ where
 
     let values_signal = list.lazy.values();
     let values_ref = values_signal.read();
-    let rows = values_ref.iter().enumerate().map(|(idx, value)| {
+    let rows = values_ref.iter().enumerate().map(move |(idx, value)| {
         let top = (list.scroll_range.start() + idx) as f64 * *list.scroll_range.item_size.read();
         rsx!(
             div {
