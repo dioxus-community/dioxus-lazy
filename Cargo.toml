@@ -1,15 +1,15 @@
 [package]
 name = "dioxus-lazy"
-version = "0.2.0"
+version = "0.3.0"
 edition = "2021"
 license = "MIT OR Apache-2.0"
 description = "Async list components for Dioxus"
-repository = "https://github.com/matthunz/dioxus-lazy"
+repository = "https://github.com/dioxus-community/dioxus-lazy"
 
 [dependencies]
-dioxus = "0.5"
-dioxus-resize-observer = "0.2.0"
-dioxus-use-mounted = "0.2"
+dioxus = "0.6.0-alpha.2"
+dioxus-resize-observer = { git = "https://github.com/dioxus-community/dioxus-resize-observer", branch = "feat/dioxus-0.6" }
+dioxus-use-mounted = { git = "https://github.com/dioxus-community/dioxus-resize-observer", branch = "feat/dioxus-0.6" }
 log = "0.4.20"
 dioxus-logger = "0.5.0"
 console_error_panic_hook = "0.1.7"
@@ -17,4 +17,4 @@ web-sys = { version = "0.3.56", features = ["HtmlElement"] }
 futures = "0.3.29"
 
 [dev-dependencies]
-dioxus = { version = "0.5", features = ["web"] }
+dioxus = { version = "0.6.0-alpha.2", features = ["web"] }
