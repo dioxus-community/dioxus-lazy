@@ -2,7 +2,7 @@ use crate::{
     lazy::{Lazy, Values},
     Direction, UseScrollRange,
 };
-use dioxus::prelude::*;
+use dioxus::{prelude::*, web::WebEventExt};
 use dioxus_use_mounted::{use_mounted, UseMounted};
 use std::marker::PhantomData;
 
@@ -83,7 +83,7 @@ impl<T> UseList<T> {
 
     pub fn scroll(&mut self) {
         if let Some(mounted) = self.mounted.signal.read().as_deref() {
-            let elem: &web_sys::Element = mounted.downcast().unwrap();
+            let elem = mounted.try_as_web_event().unwrap();
             self.scroll_range.scroll.set(elem.scroll_top());
         }
     }
