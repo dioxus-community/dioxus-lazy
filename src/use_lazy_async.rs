@@ -1,5 +1,5 @@
 use crate::{lazy::Values, Factory};
-use dioxus::prelude::*;
+use dioxus_lib::prelude::*;
 use futures::StreamExt;
 use std::{cmp::Ordering, collections::VecDeque, ops::Range, rc::Rc};
 

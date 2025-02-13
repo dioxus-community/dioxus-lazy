@@ -1,19 +1,19 @@
 [package]
 name = "dioxus-lazy"
-version = "0.3.0"
+version = "0.3.1"
 edition = "2021"
 license = "MIT OR Apache-2.0"
 description = "Async list components for Dioxus"
 repository = "https://github.com/dioxus-community/dioxus-lazy"
 
 [dependencies]
-dioxus = { version = "0.6.0", features = ["web"] }
-dioxus-resize-observer = "0.3.0"
-dioxus-use-mounted = "0.3.0"
-log = "0.4.22"
-dioxus-logger = "0.6.0"
-web-sys = { version = "0.3.72", features = ["HtmlElement"] }
-futures = "0.3.31"
+dioxus-lib = { version = "0.6" }
+dioxus-web = { version = "0.6" }
+dioxus-use-mounted = "0.3"
+log = "0.4"
+dioxus-logger = "0.6"
+web-sys = { version = "0.3", features = ["HtmlElement"] }
+futures = "0.3"
 
 [dev-dependencies]
-console_error_panic_hook = "0.1.7"
+console_error_panic_hook = "0.1"

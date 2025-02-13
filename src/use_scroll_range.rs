@@ -1,5 +1,5 @@
 use crate::Direction;
-use dioxus::prelude::*;
+use dioxus_lib::prelude::*;
 use std::ops::Range;
 
 struct Inner {

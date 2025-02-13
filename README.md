@@ -49,4 +49,3 @@ fn app() -> Element {
         onmounted: move |event| list.mounted.onmounted(event)
     })
 }
-```

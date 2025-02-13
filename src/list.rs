@@ -1,8 +1,9 @@
+use dioxus_lib::prelude::*;
+
 use crate::{
     lazy::{Lazy, Values},
     use_list::UseList,
 };
-use dioxus::prelude::*;
 
 #[derive(Props, Clone)]
 pub struct ListProps<F: 'static, G: 'static>

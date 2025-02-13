@@ -1,5 +1,6 @@
 use crate::{factory, use_lazy, use_lazy_async, UseLazy, UseLazyAsync};
-use dioxus::prelude::*;
+
+use dioxus_lib::signals::Signal;
 use futures::Future;
 use std::{collections::VecDeque, ops::Range};
 

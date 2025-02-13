@@ -2,8 +2,9 @@ use crate::{
     lazy::{Lazy, Values},
     Direction, UseScrollRange,
 };
-use dioxus::{prelude::*, web::WebEventExt};
+use dioxus_lib::prelude::*;
 use dioxus_use_mounted::{use_mounted, UseMounted};
+use dioxus_web::WebEventExt;
 use std::marker::PhantomData;
 
 struct Inner {
@@ -83,7 +84,7 @@ impl<T> UseList<T> {
 
     pub fn scroll(&mut self) {
         if let Some(mounted) = self.mounted.signal.read().as_deref() {
-            let elem = mounted.try_as_web_event().unwrap();
+            let elem = mounted.as_web_event();
             self.scroll_range.scroll.set(elem.scroll_top());
         }
     }

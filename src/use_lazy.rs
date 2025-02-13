@@ -1,5 +1,7 @@
+use dioxus_lib::prelude::*;
+
 use crate::lazy::Values;
-use dioxus::prelude::*;
+
 use std::{cmp::Ordering, collections::VecDeque, ops::Range};
 
 pub fn use_lazy<F, V, I>(make_value: F) -> UseLazy<F, V>
