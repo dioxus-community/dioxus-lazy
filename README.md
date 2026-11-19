@@ -43,7 +43,7 @@ fn app() -> Element {
     let list = UseList::builder()
         .direction(Direction::Row)
         .size(500.)
-        .use_list(cx, factory::from_fn(|idx| async move { idx }));
+        .use_list(factory::from_fn(|idx| async move { idx }));
 
     rsx!(div {
         onmounted: move |event| list.mounted.onmounted(event)
