@@ -1,9 +1,9 @@
 use crate::{
     lazy::{Lazy, Values},
+    use_mounted::{use_mounted, UseMounted},
     Direction, UseScrollRange,
 };
 use dioxus::{prelude::*, web::WebEventExt};
-use dioxus_use_mounted::{use_mounted, UseMounted};
 use std::marker::PhantomData;
 
 struct Inner {
